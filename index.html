@@ -81,7 +81,8 @@
       border-radius: 10px;
       width: 100%;
       box-sizing: border-box;
-      background: repeating-conic-gradient(#3a3a3a 0% 25%, #2a2a2a 0% 50%) 1px 1px / 12px 12px;
+      /* 가벼운 투명 미리보기 느낌 — 대비 있는 체크(회색·연회색) */
+      background: repeating-conic-gradient(#c8c8c8 0% 25%, #ececec 0% 50%) 50% / 16px 16px;
       border: 1px solid rgba(255,255,255,0.06);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -179,7 +180,7 @@
 </head>
 <body>
   <h1>오디오 → 웨이브폼 영상</h1>
-  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 알파를 거의 살리지 않아 배경은 단색입니다. 막대(핑크~시안)는 <strong>R·G·B가 모두 꽤 큰 색</strong>만 쓰이므로, 배경은 <strong>거의 검정에 가깝게(R,G,B 모두 극소)</strong> 두어 키할 때 막대와 겹치지 않게 했습니다. 키 색: <code id="chromaKeyLabel">—</code> · 편집기에서 <strong>색상 키</strong> 또는 <strong>어두운 영역/루마 제거</strong>로 잡아도 됩니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
+  <p class="sub">500×100px · WebM은 <strong>무음</strong>(막대만 담깁니다). 비디오 비트레이트는 낮게 잡았습니다. <code>MediaRecorder</code>는 캔버스 알파를 거의 살리지 않아, 배경은 <strong>검정(#000000)</strong>으로 고정했습니다. 막대는 <strong>흰색</strong>. 키 색: <code id="chromaKeyLabel">—</code> · 어두운 영역 제거나 색상 키로 배경을 지우면 됩니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>주파수(FFT) 막대</strong> — 도메인 <code>freq 95 / 700</code> · 막대 56개. 미리보기 박스는 밝은 체크무늬 위에 캔버스가 올라갑니다.</p>
 
   <div class="card">
     <label class="drop" id="drop">
@@ -210,15 +211,10 @@
   <script src="libs/waviz.umd.js"></script>
   <script>
 (function () {
-  /**
-   * 막대(Bar5 그라데이션)는 R∈[약36,233], G∈[약62,185], B∈[약183,247]처럼 항상 밝은 쪽만 쓰임.
-   * 배경은 R,G,B 모두 극히 낮은 고정색 → 막대 본픽셀과 키 색이 겹치지 않게 함(보색 아님).
-   */
-  var CHROMA_KEY_BG = "#030205";
-  var BAR5_C1 = "#E93EB7";
-  var BAR5_C2 = "#24B9F7";
+  /** 흰 막대·검정 배경 — 루마/키 분리에 유리 */
+  var CHROMA_KEY_BG = "#000000";
   var CHROMA = CHROMA_KEY_BG;
-  window.__AUDIO_WAVE__ = { barC1: BAR5_C1, barC2: BAR5_C2, chromaKey: CHROMA };
+  window.__AUDIO_WAVE__ = { chromaKey: CHROMA };
   var chromaLab = document.getElementById("chromaKeyLabel");
   if (chromaLab) chromaLab.textContent = CHROMA;
 
@@ -274,14 +270,16 @@
   const W = 500;
   const H = 100;
   const FPS = 30;
-  const THEME = window.__AUDIO_WAVE__ || {
-    barC1: "#E93EB7",
-    barC2: "#24B9F7",
-    chromaKey: "#030205",
-  };
+  const THEME = window.__AUDIO_WAVE__ || { chromaKey: "#000000" };
   const CHROMA_KEY = THEME.chromaKey;
-  /** Bar5 스타일. stroke는 크로마 키 후 가늘어짐을 줄이기 위해 다소 굵게 */
-  const BAR5 = { c1: THEME.barC1, c2: THEME.barC2, bars: 56, stroke: 7 };
+  /**
+   * freq 도메인: 진폭 95 · FFT 빈 700 · 막대 56. 막대만 흰색.
+   */
+  const VIZ = {
+    bars: 56,
+    stroke: 7,
+    barColor: "#ffffff",
+  };
 
   const drop = document.getElementById("drop");
   const fileInput = document.getElementById("file");
@@ -504,7 +502,7 @@
       dl.classList.add("is-visible");
       prevVid.src = url;
       prevVid.style.display = "block";
-      setStatus("완료. 무음 WebM입니다. 배경 " + CHROMA_KEY + " 제거(색상 키 또는 어두운 배경). 유사도는 과하게 키우지 마세요.");
+      setStatus("완료. 무음 WebM입니다. 검정 배경(#000000) 제거 · 막대는 흰색. 유사도는 과하게 키우지 마세요.");
       btnGen.disabled = false;
       drawIdle();
     };
@@ -525,13 +523,13 @@
       setStatus("녹화 중… (무음 WebM · 웨이브만)", "working");
       await audio.play();
       ctx.imageSmoothingEnabled = false;
-      /** Bar5 색상·그라데이션, 막대 촘촘히 · freq 빈 768까지 사용 */
+      /** freq 95 / 700 · 흰 막대 */
       await wz.render({
-        domain: ["freq", 95, 768],
+        domain: ["freq", 95, 700],
         coord: ["rect"],
-        viz: ["bars", BAR5.bars],
-        color: ["linearGradient", BAR5.c1, BAR5.c2],
-        stroke: [BAR5.stroke],
+        viz: ["bars", VIZ.bars],
+        color: [VIZ.barColor],
+        stroke: [VIZ.stroke],
       });
     } catch (e) {
       try { wz.stop(); } catch (e7) {}
