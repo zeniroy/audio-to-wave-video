@@ -179,7 +179,7 @@
 </head>
 <body>
   <h1>오디오 → 웨이브폼 영상</h1>
-  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 노랑(#ffff00)</strong>으로 통일했습니다(초록 배경은 시안 막대와 녹색 채널이 겹쳐 키가 잘못 먹습니다). 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
+  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 마젠타(#ff00ff)</strong>로 통일했습니다. 노랑·초록 배경은 막대 가장자리(안티앨리어싱)가 섞이면서 키가 번져 막대가 얇아지기 쉽습니다. 편집기에서는 <strong>유사도/허용 범위를 낮게</strong> 잡는 것이 좋습니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
 
   <div class="card">
     <label class="drop" id="drop">
@@ -210,7 +210,7 @@
   <script src="libs/waviz.umd.js"></script>
   <script>
 (function () {
-  var CHROMA = "#ffff00";
+  var CHROMA = "#ff00ff";
   var Wvz = window.Waviz;
   if (Wvz && Wvz.Visualizer && Wvz.Visualizer.prototype && !Wvz.Visualizer.prototype.__wavizFreqBarsFixed) {
     var origPP = Wvz.Visualizer.prototype.dataPreProcessor;
@@ -263,10 +263,10 @@
   const W = 500;
   const H = 100;
   const FPS = 30;
-  /** Bar5 그라데이션(핑크↔시안)과 겹치지 않게 키 색은 순노랑 */
-  const CHROMA_KEY = "#ffff00";
-  /** Bar5 색·그라데이션 유지, 막대는 500px 폭에 맞게 촘촘히(원본 Bar5는 20개·굵은 선) */
-  const BAR5 = { c1: "#E93EB7", c2: "#24B9F7", bars: 56, stroke: 5 };
+  /** 키 배경: 핑크↔시안 가장자리가 노랑·초록 쪽으로 섞이기 어려운 마젠타 */
+  const CHROMA_KEY = "#ff00ff";
+  /** Bar5 스타일. stroke는 크로마 키 후 가늘어짐을 줄이기 위해 다소 굵게 */
+  const BAR5 = { c1: "#E93EB7", c2: "#24B9F7", bars: 56, stroke: 7 };
 
   const drop = document.getElementById("drop");
   const fileInput = document.getElementById("file");
@@ -489,7 +489,7 @@
       dl.classList.add("is-visible");
       prevVid.src = url;
       prevVid.style.display = "block";
-      setStatus("완료. 무음 WebM입니다. 노란 배경은 편집기에서 크로마 키(노란색)로 제거할 수 있습니다.");
+      setStatus("완료. 무음 WebM입니다. 마젠타 배경은 크로마 키 색 #ff00ff, 유사도는 낮게 잡아 보세요.");
       btnGen.disabled = false;
       drawIdle();
     };
@@ -509,6 +509,7 @@
       rec.start(200);
       setStatus("녹화 중… (무음 WebM · 웨이브만)", "working");
       await audio.play();
+      ctx.imageSmoothingEnabled = false;
       /** Bar5 색상·그라데이션, 막대 촘촘히 · freq 빈 768까지 사용 */
       await wz.render({
         domain: ["freq", 95, 768],

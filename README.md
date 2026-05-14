@@ -1,7 +1,42 @@
-# audio-to-wave-video
+# 오디오 → 웨이브폼 영상 (audio-to-wave-video)
 
-**저장소:** `index.html`, `libs/waviz.umd.js`, `package.json`, `package-lock.json`, README, `.gitignore` — `node_modules` 만 Git에서 제외합니다.
+브라우저에서 **오디오 파일**을 올리면, **주파수 스펙트럼 막대**가 그려진 **짧은 WebM 영상**으로 내려받는 원페이지 도구입니다. 서버 없이 동작하며, 정적 호스팅(예: GitHub Pages)에 그대로 올릴 수 있습니다.
 
-**로컬 개발 / Waviz 갱신:** `npm install` 시 `postinstall`이 `node_modules/waviz/dist/waviz.umd.js` 를 `libs/waviz.umd.js` 로 복사합니다.
+## 무엇을 하나요?
 
-**정적 배포:** 호스트에는 보통 `index.html` + `libs/` 만 올려도 동작합니다. (`npm` 실행이 없어도 됨)
+- **입력:** 일반적인 오디오 형식(MP3, WAV, OGG 등). 파일을 끌어다 놓거나 선택합니다.
+- **출력:** 해상도 **500×100px**, **무음** WebM(막대 영상만). 재생 길이는 곡 길이와 같습니다.
+- **시각화:** [Waviz](https://github.com/Waviz-Team/Waviz) Bar5 스타일 **핑크(`#E93EB7`) → 시안(`#24B9F7`)** 그라데이션, **FFT 막대 56개**. 라이브러리 기본값과 어긋나는 주파수 막대 방향은 페이지에서 보정합니다.
+- **배경:** 브라우저 `MediaRecorder`는 캔버스 알파를 거의 살려 주지 않아, 편집 시 **크로마 키로 뗄 수 있는 단색 배경**을 씁니다. 막대 색과 **가장자리(안티앨리어싱)가 섞인 픽셀**이 키 색과 비슷해지면 배경만 지우려다 막대가 얇아질 수 있어, 노랑·순록 대신 **마젠타 `#ff00ff`** 를 씁니다. 편집기에서는 **유사도/허용 범위를 낮게** 설정하는 것을 권장합니다.
+- **미리보기:** 스피커는 Web Audio에서 **Gain 0** 경로만 두어, 분석·막대는 살리고 출력은 거의 나지 않게 했습니다.
+
+## 사용 방법
+
+1. `index.html`을 브라우저에서 엽니다(로컬은 정적 서버 권장).
+2. 오디오를 선택한 뒤 **「영상 만들기」**를 누릅니다.
+3. 끝나면 **WebM 다운로드**와 재생 미리보기가 나타납니다.
+4. 합성이 필요하면 영상 편집기에서 **마젠타 배경(`#ff00ff`)** 을 크로마 키로 제거합니다(**색상 유사도·허용 범위**는 가능한 낮게).
+
+**권장 브라우저:** WebM 녹화 지원이 좋은 **Chrome** 계열.
+
+## 로컬에서 돌리기
+
+```bash
+npm install
+npm start
+```
+
+`npm install` 시 `postinstall` 스크립트가 `waviz` UMD 번들을 **`libs/waviz.umd.js`** 로 복사합니다. 배포 서버에서 `npm`을 실행하지 않아도, 저장소에 `libs/waviz.umd.js` 가 있으면 **HTML + `libs` 만으로 동작**합니다.
+
+## 저장소 구성
+
+| 경로 | 설명 |
+|------|------|
+| `index.html` | UI·녹화·Waviz 연동 전부 |
+| `libs/waviz.umd.js` | Waviz 번들(빌드 산출물, `npm install`로 갱신 가능) |
+| `package.json` / `package-lock.json` | 의존성·스크립트 |
+| `.gitignore` | `node_modules` 등 제외 |
+
+## 라이선스
+
+프로젝트 메타(`package.json`) 기준 **ISC**. 사용 라이브러리([waviz](https://github.com/Waviz-Team/Waviz))의 라이선스는 해당 저장소를 따릅니다.
