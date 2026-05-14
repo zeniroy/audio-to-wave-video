@@ -179,7 +179,7 @@
 </head>
 <body>
   <h1>오디오 → 웨이브폼 영상</h1>
-  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 마젠타(#ff00ff)</strong>로 통일했습니다. 노랑·초록 배경은 막대 가장자리(안티앨리어싱)가 섞이면서 키가 번져 막대가 얇아지기 쉽습니다. 편집기에서는 <strong>유사도/허용 범위를 낮게</strong> 잡는 것이 좋습니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
+  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 알파를 거의 살리지 않아 배경은 단색입니다. 막대(핑크~시안)는 <strong>R·G·B가 모두 꽤 큰 색</strong>만 쓰이므로, 배경은 <strong>거의 검정에 가깝게(R,G,B 모두 극소)</strong> 두어 키할 때 막대와 겹치지 않게 했습니다. 키 색: <code id="chromaKeyLabel">—</code> · 편집기에서 <strong>색상 키</strong> 또는 <strong>어두운 영역/루마 제거</strong>로 잡아도 됩니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
 
   <div class="card">
     <label class="drop" id="drop">
@@ -210,7 +210,18 @@
   <script src="libs/waviz.umd.js"></script>
   <script>
 (function () {
-  var CHROMA = "#ff00ff";
+  /**
+   * 막대(Bar5 그라데이션)는 R∈[약36,233], G∈[약62,185], B∈[약183,247]처럼 항상 밝은 쪽만 쓰임.
+   * 배경은 R,G,B 모두 극히 낮은 고정색 → 막대 본픽셀과 키 색이 겹치지 않게 함(보색 아님).
+   */
+  var CHROMA_KEY_BG = "#030205";
+  var BAR5_C1 = "#E93EB7";
+  var BAR5_C2 = "#24B9F7";
+  var CHROMA = CHROMA_KEY_BG;
+  window.__AUDIO_WAVE__ = { barC1: BAR5_C1, barC2: BAR5_C2, chromaKey: CHROMA };
+  var chromaLab = document.getElementById("chromaKeyLabel");
+  if (chromaLab) chromaLab.textContent = CHROMA;
+
   var Wvz = window.Waviz;
   if (Wvz && Wvz.Visualizer && Wvz.Visualizer.prototype && !Wvz.Visualizer.prototype.__wavizFreqBarsFixed) {
     var origPP = Wvz.Visualizer.prototype.dataPreProcessor;
@@ -263,10 +274,14 @@
   const W = 500;
   const H = 100;
   const FPS = 30;
-  /** 키 배경: 핑크↔시안 가장자리가 노랑·초록 쪽으로 섞이기 어려운 마젠타 */
-  const CHROMA_KEY = "#ff00ff";
+  const THEME = window.__AUDIO_WAVE__ || {
+    barC1: "#E93EB7",
+    barC2: "#24B9F7",
+    chromaKey: "#030205",
+  };
+  const CHROMA_KEY = THEME.chromaKey;
   /** Bar5 스타일. stroke는 크로마 키 후 가늘어짐을 줄이기 위해 다소 굵게 */
-  const BAR5 = { c1: "#E93EB7", c2: "#24B9F7", bars: 56, stroke: 7 };
+  const BAR5 = { c1: THEME.barC1, c2: THEME.barC2, bars: 56, stroke: 7 };
 
   const drop = document.getElementById("drop");
   const fileInput = document.getElementById("file");
@@ -312,7 +327,7 @@
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = CHROMA_KEY;
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, H / 2);
@@ -489,7 +504,7 @@
       dl.classList.add("is-visible");
       prevVid.src = url;
       prevVid.style.display = "block";
-      setStatus("완료. 무음 WebM입니다. 마젠타 배경은 크로마 키 색 #ff00ff, 유사도는 낮게 잡아 보세요.");
+      setStatus("완료. 무음 WebM입니다. 배경 " + CHROMA_KEY + " 제거(색상 키 또는 어두운 배경). 유사도는 과하게 키우지 마세요.");
       btnGen.disabled = false;
       drawIdle();
     };
