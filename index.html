@@ -179,7 +179,7 @@
 </head>
 <body>
   <h1>오디오 → 웨이브폼 영상</h1>
-  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 초록(#00ff00)</strong>으로 통일했습니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
+  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 노랑(#ffff00)</strong>으로 통일했습니다(초록 배경은 시안 막대와 녹색 채널이 겹쳐 키가 잘못 먹습니다). 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
 
   <div class="card">
     <label class="drop" id="drop">
@@ -210,6 +210,7 @@
   <script src="libs/waviz.umd.js"></script>
   <script>
 (function () {
+  var CHROMA = "#ffff00";
   var Wvz = window.Waviz;
   if (Wvz && Wvz.Visualizer && Wvz.Visualizer.prototype && !Wvz.Visualizer.prototype.__wavizFreqBarsFixed) {
     var origPP = Wvz.Visualizer.prototype.dataPreProcessor;
@@ -242,7 +243,7 @@
         if (!chromaFilled) {
           chromaFilled = true;
           var fs = c.fillStyle;
-          c.fillStyle = "#00ff00";
+          c.fillStyle = CHROMA;
           c.fillRect(0, 0, c.canvas.width, c.canvas.height);
           c.fillStyle = fs;
         }
@@ -262,7 +263,8 @@
   const W = 500;
   const H = 100;
   const FPS = 30;
-  const CHROMA_GREEN = "#00ff00";
+  /** Bar5 그라데이션(핑크↔시안)과 겹치지 않게 키 색은 순노랑 */
+  const CHROMA_KEY = "#ffff00";
   /** Bar5 색·그라데이션 유지, 막대는 500px 폭에 맞게 촘촘히(원본 Bar5는 20개·굵은 선) */
   const BAR5 = { c1: "#E93EB7", c2: "#24B9F7", bars: 56, stroke: 5 };
 
@@ -308,7 +310,7 @@
 
   function drawIdle() {
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = CHROMA_GREEN;
+    ctx.fillStyle = CHROMA_KEY;
     ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = "rgba(0, 0, 0, 0.22)";
     ctx.lineWidth = 1;
@@ -487,7 +489,7 @@
       dl.classList.add("is-visible");
       prevVid.src = url;
       prevVid.style.display = "block";
-      setStatus("완료. 무음 WebM입니다. 초록 배경은 편집기에서 크로마 키로 제거할 수 있습니다.");
+      setStatus("완료. 무음 WebM입니다. 노란 배경은 편집기에서 크로마 키(노란색)로 제거할 수 있습니다.");
       btnGen.disabled = false;
       drawIdle();
     };
