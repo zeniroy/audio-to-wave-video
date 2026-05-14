@@ -1,0 +1,15 @@
+# 의존성 설치물만 제외 (정적 호스트 런타임에는 index.html + libs 만 필요)
+node_modules/
+
+# OS·에디터
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# 로그·환경
+*.log
+.env
+.env.*

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>오디오 → 웨이브폼 영상</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --text: #e8eef4;
+      --muted: #8b9cb3;
+      --accent: #3dd9c2;
+      --accent-dim: #2a9d8f;
+      --danger: #ff6b6b;
+      font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 55%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.25rem 3rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      max-width: 28rem;
+      line-height: 1.5;
+    }
+    .sub a { color: var(--accent); }
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: min(36rem, calc(100vw - 1.5rem));
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+      overflow: visible;
+    }
+    .drop {
+      display: block;
+      width: 100%;
+      border: 2px dashed rgba(61, 217, 194, 0.35);
+      border-radius: 10px;
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      box-sizing: border-box;
+    }
+    .drop:hover, .drop.dragover {
+      border-color: var(--accent);
+      background: rgba(61, 217, 194, 0.06);
+    }
+    .drop input { display: none; }
+    .drop strong { color: var(--accent); }
+    .file-name {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .preview-wrap {
+      margin-top: 1.5rem;
+      padding: 12px;
+      border-radius: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      background: repeating-conic-gradient(#3a3a3a 0% 25%, #2a2a2a 0% 50%) 1px 1px / 12px 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #cv {
+      display: block;
+      width: 100%;
+      max-width: 500px;
+      height: 100px;
+      margin: 0 auto;
+      vertical-align: middle;
+    }
+    .actions {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    button {
+      font: inherit;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: linear-gradient(165deg, var(--accent), var(--accent-dim));
+      color: #04221c;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+    .btn-download {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.62rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+      background: linear-gradient(125deg, #E93EB7 0%, #a855d8 42%, #24B9F7 100%);
+      box-shadow:
+        0 4px 16px rgba(233, 62, 183, 0.35),
+        0 2px 8px rgba(36, 185, 247, 0.25),
+        inset 0 1px 0 rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+    .btn-download.is-visible {
+      display: inline-flex;
+    }
+    .btn-download:hover {
+      filter: brightness(1.07);
+      box-shadow:
+        0 6px 22px rgba(233, 62, 183, 0.45),
+        0 4px 12px rgba(36, 185, 247, 0.35),
+        inset 0 1px 0 rgba(255,255,255,0.28);
+      transform: translateY(-1px);
+    }
+    .btn-download:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+    }
+    .btn-download:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .btn-download .dl-icon {
+      flex-shrink: 0;
+      opacity: 0.95;
+    }
+    .status {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-height: 1.25em;
+    }
+    .status.error { color: var(--danger); }
+    .status.working { color: var(--accent); }
+    video { margin-top: 1rem; max-width: 100%; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>오디오 → 웨이브폼 영상</h1>
+  <p class="sub">500×100px · 내보내기 WebM은 <strong>무음</strong>(막대만)이며, 용량을 줄이기 위해 비디오 비트레이트를 낮췄습니다. 브라우저 <code>MediaRecorder</code>는 캔버스 <strong>알파를 거의 저장하지 않아</strong> 투명이 검정처럼 보이므로, 배경은 편집기에서 뗄 수 있게 <strong>키잉용 초록(#00ff00)</strong>으로 통일했습니다. 시각화는 <a href="https://github.com/Waviz-Team/Waviz" rel="noopener noreferrer">Waviz</a> <strong>Bar5</strong> 색 · 막대 <strong>56개</strong> · <strong>FFT</strong>. 체크무늬는 캔버스 바깥 미리보기입니다.</p>
+
+  <div class="card">
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.webm" />
+      <span>파일을 끌어다 놓거나 <strong>클릭</strong>해 선택</span>
+      <div class="file-name" id="fileName"></div>
+    </label>
+
+    <div class="preview-wrap">
+      <canvas id="cv" width="500" height="100"></canvas>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="btnGen" disabled>영상 만들기</button>
+      <a class="btn-download" id="dl" download>
+        <svg class="dl-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"/>
+          <path d="m7 14 5 5 5-5"/>
+          <path d="M5 21h14"/>
+        </svg>
+        <span>WebM 다운로드</span>
+      </a>
+    </div>
+    <div class="status" id="status"></div>
+    <video id="prevVid" controls playsinline muted style="display:none"></video>
+  </div>
+
+  <script src="libs/waviz.umd.js"></script>
+  <script>
+(function () {
+  var Wvz = window.Waviz;
+  if (Wvz && Wvz.Visualizer && Wvz.Visualizer.prototype && !Wvz.Visualizer.prototype.__wavizFreqBarsFixed) {
+    var origPP = Wvz.Visualizer.prototype.dataPreProcessor;
+    Wvz.Visualizer.prototype.dataPreProcessor = function (dataType, amplitude, range, windowName) {
+      if (dataType !== "freq") return origPP.call(this, dataType, amplitude, range, windowName);
+      var raw = this.data.freqData;
+      if (!raw || !this.canvas) return origPP.call(this, dataType, amplitude, range, windowName);
+      var h = this.canvas.height;
+      var sens = typeof amplitude === "number" && amplitude > 0 ? amplitude / 100 : 1;
+      var half = h / 2;
+      var out = [];
+      var i = 0;
+      var lim = Math.min(range != null ? range : raw.length, raw.length);
+      for (; i < lim; i++) {
+        var mag = raw[i] / 255;
+        out.push(half * sens * (1 - 2 * mag));
+      }
+      return out;
+    };
+    Wvz.Visualizer.prototype.__wavizFreqBarsFixed = true;
+  }
+  if (Wvz && Wvz.Visualizer && Wvz.Visualizer.prototype && !Wvz.Visualizer.prototype.__chromaBackdropPatch) {
+    var origRender = Wvz.Visualizer.prototype.render;
+    Wvz.Visualizer.prototype.render = function (options) {
+      var c = this.ctx;
+      var origClear = c.clearRect.bind(c);
+      var chromaFilled = false;
+      c.clearRect = function (x, y, w, h) {
+        origClear(x, y, w, h);
+        if (!chromaFilled) {
+          chromaFilled = true;
+          var fs = c.fillStyle;
+          c.fillStyle = "#00ff00";
+          c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+          c.fillStyle = fs;
+        }
+      };
+      try {
+        origRender.call(this, options);
+      } finally {
+        c.clearRect = origClear;
+      }
+    };
+    Wvz.Visualizer.prototype.__chromaBackdropPatch = true;
+  }
+})();
+  </script>
+  <script>
+(function () {
+  const W = 500;
+  const H = 100;
+  const FPS = 30;
+  const CHROMA_GREEN = "#00ff00";
+  /** Bar5 색·그라데이션 유지, 막대는 500px 폭에 맞게 촘촘히(원본 Bar5는 20개·굵은 선) */
+  const BAR5 = { c1: "#E93EB7", c2: "#24B9F7", bars: 56, stroke: 5 };
+
+  const drop = document.getElementById("drop");
+  const fileInput = document.getElementById("file");
+  const fileNameEl = document.getElementById("fileName");
+  const canvas = document.getElementById("cv");
+  const ctx = canvas.getContext("2d", { alpha: true });
+  const btnGen = document.getElementById("btnGen");
+  const statusEl = document.getElementById("status");
+  const dl = document.getElementById("dl");
+  const prevVid = document.getElementById("prevVid");
+
+  let currentFile = null;
+
+  function setStatus(msg, cls) {
+    statusEl.textContent = msg;
+    statusEl.className = "status " + (cls || "");
+  }
+
+  function pickTransparentMime() {
+    const candidates = [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ];
+    for (let i = 0; i < candidates.length; i++) {
+      if (MediaRecorder.isTypeSupported(candidates[i])) return candidates[i];
+    }
+    return "";
+  }
+
+  function revokePreviewUrls() {
+    const href = dl.getAttribute("href");
+    if (href && href.indexOf("blob:") === 0) URL.revokeObjectURL(href);
+  }
+
+  function getWavizCtor() {
+    const g = window.Waviz;
+    if (!g) return null;
+    return g.default || g.Waviz || null;
+  }
+
+  function drawIdle() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = CHROMA_GREEN;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.stroke();
+  }
+
+  function attachFile(file) {
+    currentFile = file;
+    fileNameEl.textContent = file ? file.name : "";
+    btnGen.disabled = !file;
+    revokePreviewUrls();
+    dl.removeAttribute("href");
+    dl.classList.remove("is-visible");
+    prevVid.style.display = "none";
+    prevVid.removeAttribute("src");
+    setStatus("");
+    drawIdle();
+  }
+
+  fileInput.addEventListener("change", function () {
+    const f = fileInput.files && fileInput.files[0];
+    if (f) attachFile(f);
+  });
+
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.remove("dragover");
+    });
+  });
+  drop.addEventListener("drop", function (e) {
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    const ok =
+      f &&
+      (f.type.indexOf("audio/") === 0 ||
+        /\.(mp3|wav|ogg|m4a|aac|flac|webm|opus)$/i.test(f.name));
+    if (ok) attachFile(f);
+  });
+
+  drawIdle();
+
+  btnGen.addEventListener("click", async function () {
+    if (!currentFile) return;
+
+    const WavizCtor = getWavizCtor();
+    if (!WavizCtor) {
+      setStatus("Waviz를 불러오지 못했습니다. npm install 후 libs/waviz.umd.js를 확인하세요.", "error");
+      return;
+    }
+
+    const mime = pickTransparentMime();
+    if (!mime) {
+      setStatus("이 브라우저는 WebM 녹화를 지원하지 않습니다. Chrome을 사용해 보세요.", "error");
+      return;
+    }
+
+    btnGen.disabled = true;
+    setStatus("오디오 준비 중…", "working");
+    revokePreviewUrls();
+    dl.removeAttribute("href");
+    dl.classList.remove("is-visible");
+    prevVid.style.display = "none";
+    prevVid.removeAttribute("src");
+
+    const objectUrl = URL.createObjectURL(currentFile);
+    const audio = document.createElement("audio");
+    audio.crossOrigin = "anonymous";
+    audio.playsInline = true;
+    audio.preload = "auto";
+    /** volume 0에 가깝면 MediaElementSource → Analyser 신호가 거의 사라져 파형이 안 보임. 출력은 mute Gain으로만 막음 */
+    audio.volume = 1;
+    audio.src = objectUrl;
+
+    let wz = null;
+    let rec = null;
+
+    try {
+      await new Promise(function (resolve, reject) {
+        audio.addEventListener("error", function () {
+          reject(new Error("load"));
+        });
+        audio.addEventListener("canplay", function () {
+          resolve();
+        }, { once: true });
+        audio.load();
+      });
+    } catch (e) {
+      URL.revokeObjectURL(objectUrl);
+      setStatus("오디오를 불러올 수 없습니다.", "error");
+      btnGen.disabled = false;
+      return;
+    }
+
+    try {
+      wz = new WavizCtor(canvas, audio);
+    } catch (e) {
+      URL.revokeObjectURL(objectUrl);
+      setStatus("Waviz 초기화 실패: " + (e.message || String(e)), "error");
+      btnGen.disabled = false;
+      return;
+    }
+
+    const actx = wz.input.getAudioContext();
+    const srcNode = wz.input.getSourceNode();
+    if (!actx || !srcNode) {
+      try { wz.cleanup(); } catch (e2) {}
+      URL.revokeObjectURL(objectUrl);
+      setStatus("오디오 노드를 만들 수 없습니다.", "error");
+      btnGen.disabled = false;
+      return;
+    }
+
+    if (actx.state === "suspended") await actx.resume();
+
+    try {
+      srcNode.disconnect(actx.destination);
+    } catch (e3) {}
+
+    const mute = actx.createGain();
+    mute.gain.value = 0;
+    srcNode.connect(mute);
+    mute.connect(actx.destination);
+
+    const vStream = canvas.captureStream(FPS);
+    const outStream = new MediaStream();
+    vStream.getVideoTracks().forEach(function (t) {
+      if (t.kind === "video") outStream.addTrack(t);
+    });
+    vStream.getAudioTracks().forEach(function (t) {
+      t.stop();
+    });
+    outStream.getAudioTracks().forEach(function (at) {
+      outStream.removeTrack(at);
+    });
+
+    if (outStream.getVideoTracks().length === 0) {
+      try {
+        wz.cleanup();
+      } catch (e0) {}
+      URL.revokeObjectURL(objectUrl);
+      setStatus("캔버스 비디오 트랙을 만들지 못했습니다. 브라우저를 바꿔 보세요.", "error");
+      btnGen.disabled = false;
+      return;
+    }
+
+    var videoBps = Math.min(900000, Math.max(220000, Math.round(W * H * FPS * 0.1)));
+
+    const chunks = [];
+    try {
+      rec = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: videoBps });
+    } catch (mrErr) {
+      rec = new MediaRecorder(outStream, { mimeType: mime });
+    }
+    rec.ondataavailable = function (ev) {
+      if (ev.data.size) chunks.push(ev.data);
+    };
+
+    rec.onstop = function () {
+      try { wz.stop(); } catch (e4) {}
+      try { wz.cleanup(); } catch (e5) {}
+      URL.revokeObjectURL(objectUrl);
+
+      const blob = new Blob(chunks, { type: mime });
+      const url = URL.createObjectURL(blob);
+      dl.href = url;
+      dl.download = (currentFile.name.replace(/\.[^.]+$/, "") || "waveform") + ".webm";
+      dl.classList.add("is-visible");
+      prevVid.src = url;
+      prevVid.style.display = "block";
+      setStatus("완료. 무음 WebM입니다. 초록 배경은 편집기에서 크로마 키로 제거할 수 있습니다.");
+      btnGen.disabled = false;
+      drawIdle();
+    };
+
+    audio.addEventListener(
+      "ended",
+      function () {
+        try { wz.stop(); } catch (e6) {}
+        setTimeout(function () {
+          if (rec && rec.state !== "inactive") rec.stop();
+        }, 120);
+      },
+      { once: true }
+    );
+
+    try {
+      rec.start(200);
+      setStatus("녹화 중… (무음 WebM · 웨이브만)", "working");
+      await audio.play();
+      /** Bar5 색상·그라데이션, 막대 촘촘히 · freq 빈 768까지 사용 */
+      await wz.render({
+        domain: ["freq", 95, 768],
+        coord: ["rect"],
+        viz: ["bars", BAR5.bars],
+        color: ["linearGradient", BAR5.c1, BAR5.c2],
+        stroke: [BAR5.stroke],
+      });
+    } catch (e) {
+      try { wz.stop(); } catch (e7) {}
+      try { wz.cleanup(); } catch (e8) {}
+      URL.revokeObjectURL(objectUrl);
+      setStatus("재생/시각화 오류: " + (e.message || String(e)), "error");
+      btnGen.disabled = false;
+      drawIdle();
+    }
+  });
+})();
+  </script>
+</body>
+</html>
